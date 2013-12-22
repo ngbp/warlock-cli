@@ -1,0 +1,190 @@
+#!/usr/bin/env node
+
+process.title = 'ngbp';
+
+var nopt = require('nopt');
+var resolve = require( 'resolve' ).sync;
+var path = require( 'path' );
+var fs = require( 'fs' );
+var pkg = require( '../package.json' );
+
+var basedir = process.cwd();
+var ngbpPath, gruntPath, grunt;
+
+var optlist = {
+  help: {
+    short: 'h',
+    info: 'Display this help text.',
+    type: Boolean
+  },
+  version: {
+    short: 'V',
+    info: 'Print the grunt version. Combine with --verbose for more info.',
+    type: Boolean
+  }
+};
+
+// Parse `optlist` into a form that nopt can handle.
+var aliases = {};
+var known = {};
+
+Object.keys(optlist).forEach(function(key) {
+  var short = optlist[key].short;
+  if (short) {
+    aliases[short] = '--' + key;
+  }
+  known[key] = optlist[key].type;
+});
+
+var options = nopt( known, aliases, process.argv, 2 );
+var tasks = options.argv.remain;
+delete options.argv;
+
+function version () {
+  console.log( "ngbp-cli version " + pkg.version );
+  process.exit();
+}
+
+function help () {
+  console.log( "ngbp-cli help not yet implemented." );
+  process.exit();
+}
+
+function fatal ( msg, code ) {
+  console.log( msg );
+  process.exit( code || 1 );
+}
+
+function init () {
+  if ( tasks.length <= 1 ) {
+    fatal( 'You must provide a name for your project.', 91 );
+  }
+
+  if ( fs.existsSync( './Gruntfile.js' ) ) {
+    fatal( "You already have a gruntfile. This isn't supported yet, so you'll have to modify it manually.", 92 );
+  }
+
+  var name = tasks[1];
+  console.log( "Creating project '" + name + "'..." );
+
+  if ( fs.existsSync( './package.json' ) ) {
+    var pkg = JSON.parse( fs.readFileSync( './package.json' ) );
+    if ( ! pkg.ngbpModules || ! pkg.ngbpModules.length ) {
+      pkg.ngbpModules = [ "ngbp-contrib-core" ]
+    }
+
+    if ( ! pkg.devDependencies ) {
+      pkg.devDependencies = { "ngbp": "~0.4" };
+    } else {
+      var found = false;
+      Object.keys( pkg.devDependencies ).forEach( function ( mod ) {
+        if ( mod === "ngbp" ) {
+          found = true;
+        }
+      });
+
+      if ( ! found ) {
+        pkg.devDependencies["ngbp"] = "~0.4";
+      }
+    }
+
+    fs.writeFileSync( './package.json', JSON.stringify( pkg, undefined, " " ) );
+  } else {
+    var pkgfile = [
+      '{',
+      '  "name": "' + name + '",',
+      '  "version": "0.0.1",',
+      '  "author": "' + process.env['USER'] + '",',
+      '  "ngbpModules": [',
+      '    "ngbp-contrib-core"',
+      '  ],',
+      '  "devDependencies": {',
+      '    "ngbp": "~0.4"',
+      '  }',
+      '}'
+    ].join( "\n" );
+
+    fs.writeFileSync( './package.json', pkgfile );
+  }
+
+  if ( ! fs.existsSync( './bower.json' ) ) {
+    var bowerfile = [
+      '{',
+      '  "name": "' + name + '",',
+      '  "version": "0.0.1",',
+      '}'
+    ].join( "\n" );
+
+    fs.writeFileSync( './bower.json', bowerfile );
+  }
+
+  var change_vendor_dir = false;
+  if ( fs.existsSync( './.bowerrc' ) ) {
+    var bower = JSON.parse( fs.readFileSync( './.bowerrc' ) );
+    if ( ! bower.directory ) {
+      change_vendor_dir = 'bower_components';
+    } else if ( bower.directory !== 'vendor' ) {
+      change_vendor_dir = bower.directory;
+    }
+  } else {
+    change_vendor_dir = 'bower_components';
+  }
+
+  var gruntfile = [
+    'var grunt = require( "grunt" );',
+    '',
+    'module.exports = function ( grunt ) {',
+    '  grunt.config.init({',
+    '    pkg: grunt.file.readJSON( "./package.json" )' + ( change_vendor_dir ? ',' : '' ),
+    '' + ( change_vendor_dir ? '    ngbp: { paths: { vendor: "' + change_vendor_dir + '" } }' : '' ),
+    '  });',
+    '',
+    '  grunt.loadNpmTasks( "ngbp" );',
+    '};'
+  ].join( "\n" );
+
+  fs.writeFileSync( './Gruntfile.js', gruntfile );
+
+  // TODO: run npm install
+}
+
+// Do stuff based on CLI options.
+if ( options.version ) {
+  version();
+} else if ( options.help || tasks.indexOf( 'help' ) >= 0 ) {
+  help();
+} else if ( tasks.indexOf( 'init' ) >= 0 ) {
+  // TODO: init a new project
+  init();
+  process.exit();
+}
+
+/**
+ * Ensure there is a local installation of ngbp.
+ */
+try {
+  ngbpPath = resolve( 'ngbp', { basedir: basedir } );
+} catch ( ex ) {
+  fatal( 'Unable to find local ngbp. Have you run `ngbp init` yet?', 99 );
+}
+
+/**
+ * Ensure there is a local installation of grunt, since we'll pass most commands to it.
+ */
+try {
+  gruntPath = resolve( 'grunt', { basedir: basedir } );
+  grunt = require( gruntPath );
+} catch ( ex ) {
+  fatal( 'Unable to find local grunt. Have you run `ngbp init` yet?', 99 );
+}
+
+if ( ! tasks.length ) {
+  console.log( 'You must provide some command for me to run. Here\'s some help:' );
+  help();
+}
+
+/**
+ * Just pass the whatever tasks onto grunt, prefixing all of them with 'ngbp:'.
+ */
+grunt.tasks( tasks.map( function ( t ) { return 'ngbp:'+t; } ), options );
+

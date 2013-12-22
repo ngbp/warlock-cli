@@ -1,0 +1,38 @@
+{
+  "name": "ngbp-cli",
+  "version": "0.0.1",
+  "description": "Command-line interface to ngbp",
+  "homepage": "https://github.com/ngbp/ngbp-cli",
+  "author": {
+    "name": "NGBP Team",
+    "url": "http://ngbp.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ngbp/ngbp-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ngbp/ngbp-cli"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/ngbp/ngbp-cli/blob/master/LICENSE"
+    }
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "devDependencies": {
+    "grunt": "*"
+  },
+  "peerDependencies": {},
+  "dependencies": {
+    "resolve": "~0.6.1",
+    "nopt": "~2.1.2"
+  },
+  "preferGlobal": true,
+  "bin": {
+    "ngbp": "bin/ngbp"
+  }
+}
