@@ -7,6 +7,7 @@ var resolve = require( 'resolve' ).sync;
 var path = require( 'path' );
 var fs = require( 'fs' );
 var pkg = require( '../package.json' );
+var spawn = require( 'child_process' ).spawn;
 
 var basedir = process.cwd();
 var ngbpPath, gruntPath, grunt;
@@ -95,11 +96,15 @@ function init () {
       '  "name": "' + name + '",',
       '  "version": "0.0.1",',
       '  "author": "' + process.env['USER'] + '",',
-      '  "ngbpModules": [',
-      '    "ngbp-contrib-core"',
-      '  ],',
       '  "devDependencies": {',
-      '    "ngbp": "~0.4"',
+      '    "ngbp": "~0.4",',
+      '    "ngbp-contrib-clean": "~0.0.1",',
+      '    "ngbp-contrib-copy": "~0.0.1",',
+      '    "ngbp-contrib-tpl": "~0.0.1",',
+      '    "ngbp-contrib-lintjs": "~0.0.1",',
+      '    "ngbp-contrib-lintcss": "~0.0.1",',
+      '    "ngbp-contrib-mincss": "~0.0.1",',
+      '    "ngbp-contrib-minjs": "~0.0.1"',
       '  }',
       '}'
     ].join( "\n" );
@@ -145,7 +150,44 @@ function init () {
 
   fs.writeFileSync( './Gruntfile.js', gruntfile );
 
-  // TODO: run npm install
+  if ( ! fs.existsSync( './src' ) ) {
+    fs.mkdirSync( './src' );
+  }
+
+  if ( ! fs.existsSync( './src/index.html' ) ) {
+    var index = [
+      '<!DOCTYPE html>',
+      '<html>',
+      '  <head>',
+      '    <title>ngbp</title>',
+      '',
+      '    <!-- ngbp:css --><% ngbp.styles.forEach( function ( file ) { %>',
+      '    <link rel="stylesheet" type="text/css" href="<%= file %>" /><% }); %>',
+      '',
+      '    <!-- ngbp:js --><% ngbp.scripts.forEach( function ( file ) { %>',
+      '    <script type="text/javascript" src="<%= file %>"></script><% }); %>',
+      '  </head>',
+      '  <body>',
+      '    <h1>ngbp generated me!</h1>',
+      '  </body>',
+      '</html>'
+    ].join( "\n" );
+
+    fs.writeFileSync( './src/index.html', index );
+  }
+
+  // run npm install
+  var npm = spawn( 'npm', [ 'install' ], {
+    cwd: process.cwd()
+  });
+
+  npm.stdout.pipe( process.stdout );
+  npm.stderr.pipe( process.stderr );
+
+  npm.on('close', function ( code ) {
+    console.log( "New ngbp project created successfully. Happy coding!" );
+    process.exit();
+  });
 }
 
 // Do stuff based on CLI options.
@@ -154,37 +196,35 @@ if ( options.version ) {
 } else if ( options.help || tasks.indexOf( 'help' ) >= 0 ) {
   help();
 } else if ( tasks.indexOf( 'init' ) >= 0 ) {
-  // TODO: init a new project
   init();
-  process.exit();
-}
+} else {
+  /**
+   * Ensure there is a local installation of ngbp.
+   */
+  try {
+    ngbpPath = resolve( 'ngbp', { basedir: basedir } );
+  } catch ( ex ) {
+    fatal( 'Unable to find local ngbp. Have you run `ngbp init` yet?', 99 );
+  }
 
-/**
- * Ensure there is a local installation of ngbp.
- */
-try {
-  ngbpPath = resolve( 'ngbp', { basedir: basedir } );
-} catch ( ex ) {
-  fatal( 'Unable to find local ngbp. Have you run `ngbp init` yet?', 99 );
-}
+  /**
+   * Ensure there is a local installation of grunt, since we'll pass most commands to it.
+   */
+  try {
+    gruntPath = resolve( 'grunt', { basedir: basedir } );
+    grunt = require( gruntPath );
+  } catch ( ex ) {
+    fatal( 'Unable to find local grunt. Have you run `ngbp init` yet?', 99 );
+  }
 
-/**
- * Ensure there is a local installation of grunt, since we'll pass most commands to it.
- */
-try {
-  gruntPath = resolve( 'grunt', { basedir: basedir } );
-  grunt = require( gruntPath );
-} catch ( ex ) {
-  fatal( 'Unable to find local grunt. Have you run `ngbp init` yet?', 99 );
-}
+  if ( ! tasks.length ) {
+    console.log( 'You must provide some command for me to run. Here\'s some help:' );
+    help();
+  }
 
-if ( ! tasks.length ) {
-  console.log( 'You must provide some command for me to run. Here\'s some help:' );
-  help();
+  /**
+   * Just pass the whatever tasks onto grunt, prefixing all of them with 'ngbp:'.
+   */
+  grunt.tasks( tasks.map( function ( t ) { return 'ngbp-'+t; } ), options );
 }
-
-/**
- * Just pass the whatever tasks onto grunt, prefixing all of them with 'ngbp:'.
- */
-grunt.tasks( tasks.map( function ( t ) { return 'ngbp-'+t; } ), options );
 
