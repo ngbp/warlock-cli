@@ -186,5 +186,5 @@ if ( ! tasks.length ) {
 /**
  * Just pass the whatever tasks onto grunt, prefixing all of them with 'ngbp:'.
  */
-grunt.tasks( tasks.map( function ( t ) { return 'ngbp:'+t; } ), options );
+grunt.tasks( tasks.map( function ( t ) { return 'ngbp-'+t; } ), options );
 

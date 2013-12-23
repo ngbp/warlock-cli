@@ -1,6 +1,6 @@
 {
   "name": "ngbp-cli",
-  "version": "0.0.1",
+  "version": "0.0.1-1",
   "description": "Command-line interface to ngbp",
   "homepage": "https://github.com/ngbp/ngbp-cli",
   "author": {
