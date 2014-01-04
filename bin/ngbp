@@ -51,8 +51,8 @@ function help () {
   console.log( "Usage".underline );
   console.log( " ngbp [options] [task]\n" );
   console.log( "Options".underline );
-  console.log( "     --help, -h  Display this help text." );
-  console.log( "  --version, -V  Print the ngbp version.\n" );
+  console.log( "     --help, -h  Display this help text" );
+  console.log( "  --version, -V  Print the ngbp version\n" );
   console.log( "Available tasks".underline );
   console.log( "           init  Initialize this project with an ngbp instance" );
   process.exit();
