@@ -1,6 +1,6 @@
 {
   "name": "ngbp-cli",
-  "version": "0.0.1-1",
+  "version": "0.0.1-2",
   "description": "Command-line interface to ngbp",
   "homepage": "https://github.com/ngbp/ngbp-cli",
   "author": {
@@ -29,7 +29,9 @@
   "peerDependencies": {},
   "dependencies": {
     "resolve": "~0.6.1",
-    "nopt": "~2.1.2"
+    "colors": "~0.6.2",
+    "findup-sync": "~0.1.2",
+    "q": "~0.9.7"
   },
   "preferGlobal": true,
   "bin": {
