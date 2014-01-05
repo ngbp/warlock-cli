@@ -9,14 +9,15 @@ var SPAWN = require( 'child_process' ).spawn;
 // 3rd Party Modules
 var Q = require( 'q' );
 var COLORS = require( 'colors' );
-var FINDUP = require('findup-sync');
-var RESOLVE = require('resolve').sync;
+var FINDUP = require( 'findup-sync' );
+var RESOLVE = require( 'resolve' ).sync;
+var PREFIX = "[ngbp] ";
 
 // Local libs
 var PKG = require( './../package.json' );
 
 function log ( msg ) {
-  console.log( "[ngbp] " + msg );
+  console.log( PREFIX + msg );
 }
 
 function writeln ( msg ) {
@@ -24,7 +25,7 @@ function writeln ( msg ) {
 }
 
 function error ( msg, fatal ) {
-  msg = "[ngbp] " + msg;
+  msg = PREFIX + msg;
   console.log( msg.red );
 
   if ( fatal ) {
@@ -33,7 +34,7 @@ function error ( msg, fatal ) {
 }
 
 function header ( msg ) {
-  msg = "[ngbp] " + msg;
+  msg = PREFIX + msg;
   console.log( msg.underline.magenta );
 }
 
@@ -59,7 +60,7 @@ function installNgbpIfNeeded () {
       // Ensure the user is okay with installing it here.
       var rl = READLINE.createInterface({
         input: process.stdin,
-          output: process.stdout
+        output: process.stdout
       });
 
       rl.question( "Install ngbp in the current directory? [Yn] ", function ( answer ) {
