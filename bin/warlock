@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-process.title = 'ngbp';
+process.title = 'warlock';
 
 // Node.js libs
 var READLINE = require( 'readline' );
@@ -16,7 +16,7 @@ var RESOLVE = require('resolve').sync;
 var PKG = require( './../package.json' );
 
 function log ( msg ) {
-  console.log( "[ngbp] " + msg );
+  console.log( "[warlock] " + msg );
 }
 
 function writeln ( msg ) {
@@ -24,7 +24,7 @@ function writeln ( msg ) {
 }
 
 function error ( msg, fatal ) {
-  msg = "[ngbp] " + msg;
+  msg = "[warlock] " + msg;
   console.log( msg.red );
 
   if ( fatal ) {
@@ -33,28 +33,28 @@ function error ( msg, fatal ) {
 }
 
 function header ( msg ) {
-  msg = "[ngbp] " + msg;
+  msg = "[warlock] " + msg;
   console.log( msg.underline.magenta );
 }
 
-function installNgbpIfNeeded () {
+function installWarlockIfNeeded () {
   var deferred = Q.defer();
 
   /**
-   * Ensure there is a local installation of ngbp.
+   * Ensure there is a local installation of warlock.
    */
   try {
-    ngbpPath = RESOLVE( 'ngbp', { basedir: process.cwd() } );
-    deferred.resolve( true );
+    warlockPath = RESOLVE( 'warlock', { basedir: process.cwd() } );
+    deferred.resolve( warlockPath );
   } catch ( e ) {
     error( "Encountered error: " + e );
-    ngbpPath = FINDUP( 'lib/ngbp.js' );
+    warlockPath = FINDUP( 'lib/warlock.js' );
 
-    // No ngbp install found!
-    if ( ngbpPath ) {
-      deferred.resolve( true );
+    // No warlock install found!
+    if ( warlockPath ) {
+      deferred.resolve( warlockPath );
     } else {
-      header( "Local ngbp not installed." );
+      header( "Local warlock not installed." );
 
       // Ensure the user is okay with installing it here.
       var rl = READLINE.createInterface({
@@ -62,19 +62,20 @@ function installNgbpIfNeeded () {
           output: process.stdout
       });
 
-      rl.question( "Install ngbp in the current directory? [Yn] ", function ( answer ) {
+      rl.question( "Install warlock in the current directory? [Yn] ", function ( answer ) {
         rl.close();
 
         if ( answer && [ 'y', 'Y', 'yes', 'Yes', 'YES' ].indexOf( answer ) === -1 ) {
-          deferred.reject( "I can't function without a local ngbp installation." );
+          deferred.reject( "I can't function without a local warlock installation." );
           return;
         }
 
         /**
-         * This will install ngbp and its dependencies locally, and if there is a `package.json`
+         * This will install warlock and its dependencies locally, and if there is a `package.json`
          * file it will save the requirement to the `devDependencies` array.
          */
-        var npm = SPAWN( 'npm', [ 'install', '--save-dev', 'ngbp' ], {
+        var npm = SPAWN( 'npm', [ 'link', '--save-dev', 'warlock' ], {
+        // var npm = SPAWN( 'npm', [ 'install', '--save-dev', 'warlock' ], {
           cwd: process.cwd()
         });
 
@@ -89,7 +90,7 @@ function installNgbpIfNeeded () {
 
         npm.on( 'close', function ( code ) {
           if ( code === 0 ) {
-            deferred.resolve( true );
+            deferred.resolve( RESOLVE( 'warlock', { basedir: process.cwd() } ) );
           } else {
             deferred.reject( "NPM exited with status " + code + "." );
           }
@@ -105,18 +106,24 @@ function installNgbpIfNeeded () {
  * Print out the version, if necessary.
  */
 if( process.argv.indexOf( '--version' ) !== -1 || process.argv.indexOf( '-V' ) !== -1 ) {
-  writeln( "ngbp-cli v" + PKG.version );
+  writeln( "warlock-cli v" + PKG.version );
 }
 
 /**
- * Ensure that NGBP is installed, then load the CLI.
+ * Ensure that warlock is installed, then load the CLI.
  */
-installNgbpIfNeeded()
-.then( function () {
-  return require( ngbpPath ).cli();
+installWarlockIfNeeded()
+.then( function ( warlockPath ) {
+  return require( warlockPath ).cli();
 })
-.catch( function ( err ) {
-  console.log( err.stack );
+.done( function () {
+  // FIXME(jdm): I'm almost certain this shouldn't be necessary...
+  process.exit();
+}, function ( err ) {
+  if ( err.stack ) {
+    console.log( err.stack );
+  }
+
   error( "Well, shoot-darn. " + err + " Exiting...", true );
 });
 
