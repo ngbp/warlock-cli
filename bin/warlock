@@ -74,8 +74,7 @@ function installWarlockIfNeeded () {
          * This will install warlock and its dependencies locally, and if there is a `package.json`
          * file it will save the requirement to the `devDependencies` array.
          */
-        var npm = SPAWN( 'npm', [ 'link', '--save-dev', 'warlock' ], {
-        // var npm = SPAWN( 'npm', [ 'install', '--save-dev', 'warlock' ], {
+        var npm = SPAWN( 'npm', [ 'install', '--save-dev', 'warlock-engine' ], {
           cwd: process.cwd()
         });
 
@@ -90,7 +89,7 @@ function installWarlockIfNeeded () {
 
         npm.on( 'close', function ( code ) {
           if ( code === 0 ) {
-            deferred.resolve( RESOLVE( 'warlock', { basedir: process.cwd() } ) );
+            deferred.resolve( RESOLVE( 'warlock-engine', { basedir: process.cwd() } ) );
           } else {
             deferred.reject( "NPM exited with status " + code + "." );
           }
